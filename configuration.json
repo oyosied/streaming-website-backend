@@ -1,0 +1,10 @@
+{
+    "DB_Connection_Details": {
+        
+            "host": "localhost",
+            "user": "root",
+            "password": "Aa@123456",
+            "database": "streaming_db"
+    
+    }
+}
