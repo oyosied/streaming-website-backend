@@ -36,24 +36,25 @@ class DBManager {
     this.requests_inprogress = 0;
   }
 
-  async query(info, sql_query) {
+  async query(info, sql_query, parameters) {
     const request = new DBRequest(info, sql_query);
     this.requests_inprogress += 1;
     this.requests.set(this.requests_inprogress, request);
     request.status = RequestStatus.IN_PROGRESS;
-    let results;
     try {
-      let query = util.promisify(this.DBPool.query).bind(this.DBPool);
-      results = await query(sql_query);
+      const query = util.promisify(this.DBPool.query).bind(this.DBPool);
+      const results = await query({ sql: sql_query, values: parameters });
       request.results = results;
       request.status = RequestStatus.COMPLETED;
       logger.info(request);
       console.log(this.requests);
+      return { error: false, results };
     } catch (error) {
       request.status = RequestStatus.FAILED;
       request.results = error;
       logger.error(request);
       console.log(this.requests);
+      return { error: true, results: [] };
     }
   }
 }

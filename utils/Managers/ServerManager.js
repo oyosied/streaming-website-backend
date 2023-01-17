@@ -17,5 +17,5 @@ class ServerManager {
     await listen();
   }
 }
-
-module.exports = ServerManager;
+const SrvMgr = new ServerManager();
+module.exports = SrvMgr;
