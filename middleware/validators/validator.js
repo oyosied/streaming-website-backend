@@ -1,4 +1,7 @@
 const Joi = require("@hapi/joi");
+const jwt = require("jsonwebtoken");
+const ServerManager = require("../../utils/Managers/ServerManager.js");
+const HttpError = require("../../models/http-error.js");
 
 const ErrorMessages = {
   password: {
@@ -10,6 +13,7 @@ const ErrorMessages = {
       "Password must be 6-12 characters containing numbers and letters only",
   },
   email: {
+    "string.email": "Must be a valid email",
     "any.required": "Must be a valid email",
   },
   name: {
@@ -43,13 +47,9 @@ const Validators = {
     .pattern(new RegExp("^[a-zA-Z0-9]{6,12}$"))
     .required()
     .messages(ErrorMessages.password),
-  phone: Joi.string()
-    .regex(/^\d{10}$/)
-    .required()
-    .messages({
-      "string.pattern.base": "Phone number must be a 10 digit number",
-      "any.required": "Phone number is required",
-    }),
+  phone: Joi.string().min(6).max(12).required().messages({
+    "any.required": "Phone number is required",
+  }),
   gender: Joi.string().valid("male", "female", "other").required().messages({
     "any.only": "Gender must be one of male, female, or other",
     "any.required": "Gender is required",
@@ -59,7 +59,6 @@ const Validators = {
 const registerSchema = Joi.object({
   email: Validators.email,
   password: Validators.password,
-  name: Validators.name,
   phone: Validators.phone,
   gender: Validators.gender,
 });
@@ -86,4 +85,39 @@ const validateInputs = (req, res, next) => {
   next();
 };
 
+const validateToken = (req) => {
+  const token = req.headers["x-access-token"] || req.headers["authorization"];
+  if (!token) {
+    return false;
+  }
+
+  try {
+    const decoded = jwt.verify(token, ServerManager.jwt_secret);
+    req.user = decoded;
+    return true;
+  } catch (err) {
+    return false;
+  }
+};
+const validateTokenWithResponse = (req, res) => {
+  const isTokenValid = validateToken(req);
+  if (isTokenValid) {
+    res.status(200).json({ error: false, message: "Token is valid" });
+  } else {
+    res.status(400).json({ error: true, message: "Token is invalid" });
+  }
+};
+
+const validateTokenWithNext = (req, res, next) => {
+  const isTokenValid = validateToken(req);
+  if (isTokenValid) {
+    next();
+  } else {
+    res.status(400).json({ error: true, message: "Token is invalid" });
+  }
+};
+
+exports.validateToken = validateToken;
 exports.validateInputs = validateInputs;
+exports.validateTokenWithNext = validateTokenWithNext;
+exports.validateTokenWithResponse = validateTokenWithResponse;
