@@ -91,7 +91,27 @@ const get_genres = async (req, res) => {
   res.status(200).json({ genres: result.results });
 };
 
+const get_series_by_genres = async (req, res) => {
+  const genre_id = req.params.genre_id;
+  const result = await DB.query(
+    "Get genres",
+    "SELECT * FROM series WHERE genre_id = ?",
+    [genre_id]
+  );
+  if (result.error) {
+    res.status(500).send({ error: "Error fetching series" });
+    return;
+  }
+
+  if (result.results.length === 0) {
+    res.status(404).send({ error: "Genres series not found" });
+    return;
+  }
+  res.status(200).json({ genres: result.results });
+};
+
 exports.get_episode = get_episode;
 exports.get_series = get_series;
 exports.get_genres = get_genres;
 exports.get_seasons = get_seasons;
+exports.get_series_by_genres = get_series_by_genres;
